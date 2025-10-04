@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XO Game (Rialo)</title>
+  <title>XO Game (Rialo) – Bot Easy</title>
   <style>
     body {
       font-family: system-ui, sans-serif;
@@ -27,96 +27,123 @@
       backdrop-filter: blur(4px);
       box-shadow: 0 10px 30px rgba(0,0,0,.25);
       border-radius: 16px;
-      padding: 20px;
-      max-width: 320px;
-      width: 100%;
+      padding: 18px;
+      width: 320px;
+      max-width: calc(100vw - 24px);
     }
-    h1 {
-      margin: 6px 0 12px;
-      font-size: clamp(22px, 4vw, 28px);
+    h1 { margin: 6px 0 8px; font-size: 22px; }
+    .toolbar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin: 8px 0 10px; font-size: 14px;
     }
     #board {
-      display: grid;
+      display: grid; gap: 4px; width: 270px; margin: 8px auto;
       grid-template-columns: repeat(3, 1fr);
-      gap: 4px; /* ช่องห่างเล็กลง */
-      width: 270px;
-      margin: 14px auto;
     }
     .cell {
-      aspect-ratio: 1/1; /* ทำให้เป็นสี่เหลี่ยมจัตุรัส */
+      aspect-ratio: 1/1;
       background: #fff;
       border: 2px solid #1f2937;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      border-radius: 10px;
-      transition: transform .08s ease;
-      user-select: none;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; cursor: pointer; user-select: none;
+      transition: transform .08s ease, background .2s ease;
     }
     .cell:active { transform: scale(.98); }
     .cell img { max-width: 80%; max-height: 80%; }
-    #status {
-      margin-top: 8px;
-      font-size: 18px;
-      font-weight: 700;
-      color: #111827;
-    }
-    .actions { margin-top: 14px; }
-    button {
-      padding: 8px 14px;
-      font-size: 15px;
-      border-radius: 8px;
-      border: 1px solid #111827;
-      background: #fff;
-      cursor: pointer;
-    }
+    .disabled { pointer-events: none; opacity: .7; }
+    #status { margin-top: 8px; font-weight: 700; }
+    button { padding: 8px 12px; border-radius: 8px; border: 1px solid #111; background: #fff; cursor: pointer; }
+    label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+    input[type="checkbox"] { transform: scale(1.2); }
   </style>
 </head>
 <body>
   <div class="backdrop">
     <div class="card">
       <h1>XO Game (Rialo)</h1>
-      <div id="board" aria-label="tic tac toe board"></div>
-      <div id="status">Player 1's turn</div>
-      <div class="actions">
-        <button onclick="resetGame()">รีเซ็ตเกม</button>
+      <div class="toolbar">
+        <label><input id="botToggle" type="checkbox" checked> เล่นกับบอท (O เป็นบอท)</label>
+        <button onclick="resetGame()">รีเซ็ต</button>
       </div>
+      <div id="board" aria-label="tic tac toe board"></div>
+      <div id="status">Player X's turn</div>
     </div>
   </div>
+
   <script>
-    const board = document.getElementById("board");
-    const statusEl = document.getElementById("status");
-    const logoX = "logo_black.png";
-    const logoO = "logo_yellow.png";
-    let currentPlayer = "X";
+    const board = document.getElementById('board');
+    const statusEl = document.getElementById('status');
+    const botToggle = document.getElementById('botToggle');
+
+    const logoX = 'logo_black.png';   // X = โลโก้ดำ
+    const logoO = 'logo_yellow.png';  // O = โลโก้วงเหลือง Z
+
+    let currentPlayer = 'X';
     let gameState = Array(9).fill(null);
+    let botThinking = false;
+
+    // Create cells
     for (let i = 0; i < 9; i++) {
-      const cell = document.createElement("div");
-      cell.className = "cell";
+      const cell = document.createElement('div');
+      cell.className = 'cell';
       cell.dataset.index = i;
-      cell.addEventListener("click", handleClick);
+      cell.addEventListener('click', handleClick);
       board.appendChild(cell);
     }
+
     function handleClick(e) {
-      const index = e.currentTarget.dataset.index;
+      const index = +e.currentTarget.dataset.index;
+      if (botThinking) return;
       if (gameState[index] || checkWinner()) return;
-      gameState[index] = currentPlayer;
-      e.currentTarget.innerHTML = `<img src="${currentPlayer === "X" ? logoX : logoO}" alt="${currentPlayer}">`;
+
+      placeMark(index, currentPlayer);
+
       if (checkWinner()) { statusEl.textContent = `Player ${currentPlayer} ชนะ! 🎉`; return; }
-      if (gameState.every(Boolean)) { statusEl.textContent = "เสมอ!"; return; }
-      currentPlayer = currentPlayer === "X" ? "O" : "X";
+      if (gameState.every(Boolean)) { statusEl.textContent = 'เสมอ!'; return; }
+
+      currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
       statusEl.textContent = `Player ${currentPlayer}'s turn`;
+
+      if (botToggle.checked && currentPlayer === 'O') botMoveEasy();
     }
+
+    function placeMark(index, player) {
+      gameState[index] = player;
+      const cell = document.querySelector(`.cell[data-index='${index}']`);
+      cell.innerHTML = `<img src="${player === 'X' ? logoX : logoO}" alt="${player}">`;
+    }
+
+    function botMoveEasy() {
+      const empty = gameState.map((v,i)=>v?null:i).filter(v=>v!==null);
+      if (empty.length === 0) return;
+      botThinking = true;
+      board.classList.add('disabled');
+      setTimeout(() => {
+        const choice = empty[Math.floor(Math.random() * empty.length)];
+        placeMark(choice, 'O');
+
+        if (checkWinner()) { statusEl.textContent = 'Player O ชนะ! 🎉'; botThinking = false; board.classList.remove('disabled'); return; }
+        if (gameState.every(Boolean)) { statusEl.textContent = 'เสมอ!'; botThinking = false; board.classList.remove('disabled'); return; }
+
+        currentPlayer = 'X';
+        statusEl.textContent = `Player ${currentPlayer}'s turn`;
+        botThinking = false;
+        board.classList.remove('disabled');
+      }, 450);
+    }
+
     function checkWinner() {
-      const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-      return wins.some(([a,b,c]) => gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]);
+      const W = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+      return W.some(([a,b,c]) => gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]);
     }
+
     function resetGame() {
       gameState = Array(9).fill(null);
-      currentPlayer = "X";
-      statusEl.textContent = "Player 1's turn";
-      [...document.querySelectorAll(".cell")].forEach(c => c.innerHTML = "");
+      currentPlayer = 'X';
+      statusEl.textContent = `Player ${currentPlayer}'s turn`;
+      botThinking = false;
+      board.classList.remove('disabled');
+      [...document.querySelectorAll('.cell')].forEach(c => c.innerHTML = '');
     }
   </script>
 </body>
