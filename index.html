@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <title>XO Game with Project Logos</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: #f2f2f2;
+      text-align: center;
+    }
+    h1 { margin-top: 20px; }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      grid-template-rows: repeat(3, 100px);
+      gap: 5px;
+      justify-content: center;
+      margin: 30px auto;
+    }
+    .cell {
+      width: 100px;
+      height: 100px;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      cursor: pointer;
+      border: 2px solid #333;
+    }
+    .cell img {
+      max-width: 80%;
+      max-height: 80%;
+    }
+    #status {
+      margin-top: 15px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>XO Game (Custom Logos)</h1>
+  <div id="board"></div>
+  <div id="status">Player 1's turn</div>
+  <button onclick="resetGame()">รีเซ็ตเกม</button>
+
+  <script>
+    const board = document.getElementById("board");
+    const status = document.getElementById("status");
+    
+    const logoX = "logo_black.png"; // โลโก้สีดำ
+    const logoO = "logo_yellow.png"; // โลโก้สีเหลือง
+    
+    let currentPlayer = "X";
+    let gameState = Array(9).fill(null);
+    
+    for (let i = 0; i < 9; i++) {
+      const cell = document.createElement("div");
+      cell.classList.add("cell");
+      cell.dataset.index = i;
+      cell.addEventListener("click", handleClick);
+      board.appendChild(cell);
+    }
+    
+    function handleClick(e) {
+      const index = e.target.dataset.index;
+      if (gameState[index] || checkWinner()) return;
+      
+      gameState[index] = currentPlayer;
+      e.target.innerHTML = `<img src="${currentPlayer === "X" ? logoX : logoO}" alt="${currentPlayer}">`;
+      
+      if (checkWinner()) {
+        status.textContent = `Player ${currentPlayer} ชนะ! 🎉`;
+        return;
+      }
+      
+      currentPlayer = currentPlayer === "X" ? "O" : "X";
+      status.textContent = `Player ${currentPlayer}'s turn`;
+    }
+    
+    function checkWinner() {
+      const wins = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+      return wins.some(pattern => {
+        const [a,b,c] = pattern;
+        return gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c];
+      });
+    }
+    
+    function resetGame() {
+      gameState = Array(9).fill(null);
+      currentPlayer = "X";
+      status.textContent = "Player 1's turn";
+      document.querySelectorAll(".cell").forEach(cell => cell.innerHTML = "");
+    }
+  </script>
+</body>
+</html>
