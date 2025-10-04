@@ -2,107 +2,121 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8">
-  <title>XO Game with Project Logos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XO Game (Rialo)</title>
   <style>
     body {
-      font-family: sans-serif;
-      background: #f2f2f2;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       text-align: center;
+      margin: 0;
+      background-image: url('bg_xo.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
     }
-    h1 { margin-top: 20px; }
+    .backdrop {
+      background: rgba(0,0,0,.35);
+      min-height: 100dvh;
+      display: grid;
+      place-items: center;
+      padding: 32px 16px;
+    }
+    .card {
+      background: rgba(255,255,255,.86);
+      backdrop-filter: blur(4px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      border-radius: 16px;
+      padding: 20px;
+      max-width: 560px;
+      width: 100%;
+    }
+    h1 {
+      margin: 6px 0 12px;
+      font-size: clamp(22px, 4vw, 32px);
+    }
     #board {
       display: grid;
-      grid-template-columns: repeat(3, 100px);
-      grid-template-rows: repeat(3, 100px);
-      gap: 5px;
-      justify-content: center;
-      margin: 30px auto;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin: 14px auto;
     }
     .cell {
-      width: 100px;
-      height: 100px;
-      background: white;
+      width: min(28vw, 120px);
+      height: min(28vw, 120px);
+      background: #fff;
+      border: 2px solid #1f2937;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 40px;
       cursor: pointer;
-      border: 2px solid #333;
+      border-radius: 10px;
+      transition: transform .08s ease;
+      user-select: none;
     }
-    .cell img {
-      max-width: 80%;
-      max-height: 80%;
-    }
+    .cell:active { transform: scale(.98); }
+    .cell img { max-width: 80%; max-height: 80%; }
     #status {
-      margin-top: 15px;
-      font-size: 20px;
-      font-weight: bold;
+      margin-top: 8px;
+      font-size: 18px;
+      font-weight: 700;
+      color: #111827;
     }
+    .actions { margin-top: 14px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
     button {
-      margin-top: 20px;
-      padding: 10px 20px;
+      padding: 10px 16px;
       font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #111827;
+      background: #fff;
       cursor: pointer;
     }
   </style>
 </head>
 <body>
-  <h1>XO Game (Custom Logos)</h1>
-  <div id="board"></div>
-  <div id="status">Player 1's turn</div>
-  <button onclick="resetGame()">รีเซ็ตเกม</button>
-
+  <div class="backdrop">
+    <div class="card">
+      <h1>XO Game (Rialo)</h1>
+      <div id="board" aria-label="tic tac toe board"></div>
+      <div id="status">Player 1's turn</div>
+      <div class="actions">
+        <button onclick="resetGame()">รีเซ็ตเกม</button>
+      </div>
+    </div>
+  </div>
   <script>
     const board = document.getElementById("board");
-    const status = document.getElementById("status");
-    
-    const logoX = "logo_black.png"; // โลโก้สีดำ
-    const logoO = "logo_yellow.png"; // โลโก้สีเหลือง
-    
+    const statusEl = document.getElementById("status");
+    const logoX = "logo_black.png";
+    const logoO = "logo_yellow.png";
     let currentPlayer = "X";
     let gameState = Array(9).fill(null);
-    
     for (let i = 0; i < 9; i++) {
       const cell = document.createElement("div");
-      cell.classList.add("cell");
+      cell.className = "cell";
       cell.dataset.index = i;
       cell.addEventListener("click", handleClick);
       board.appendChild(cell);
     }
-    
     function handleClick(e) {
-      const index = e.target.dataset.index;
+      const index = e.currentTarget.dataset.index;
       if (gameState[index] || checkWinner()) return;
-      
       gameState[index] = currentPlayer;
-      e.target.innerHTML = `<img src="${currentPlayer === "X" ? logoX : logoO}" alt="${currentPlayer}">`;
-      
-      if (checkWinner()) {
-        status.textContent = `Player ${currentPlayer} ชนะ! 🎉`;
-        return;
-      }
-      
+      e.currentTarget.innerHTML = `<img src="${currentPlayer === "X" ? logoX : logoO}" alt="${currentPlayer}">`;
+      if (checkWinner()) { statusEl.textContent = `Player ${currentPlayer} ชนะ! 🎉`; return; }
+      if (gameState.every(Boolean)) { statusEl.textContent = "เสมอ!"; return; }
       currentPlayer = currentPlayer === "X" ? "O" : "X";
-      status.textContent = `Player ${currentPlayer}'s turn`;
+      statusEl.textContent = `Player ${currentPlayer}'s turn`;
     }
-    
     function checkWinner() {
-      const wins = [
-        [0,1,2],[3,4,5],[6,7,8],
-        [0,3,6],[1,4,7],[2,5,8],
-        [0,4,8],[2,4,6]
-      ];
-      return wins.some(pattern => {
-        const [a,b,c] = pattern;
-        return gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c];
-      });
+      const wins = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+      return wins.some(([a,b,c]) => gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]);
     }
-    
     function resetGame() {
       gameState = Array(9).fill(null);
       currentPlayer = "X";
-      status.textContent = "Player 1's turn";
-      document.querySelectorAll(".cell").forEach(cell => cell.innerHTML = "");
+      statusEl.textContent = "Player 1's turn";
+      [...document.querySelectorAll(".cell")].forEach(c => c.innerHTML = "");
     }
   </script>
 </body>
